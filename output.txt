@@ -1,6 +1,0 @@
-Microsoft Windows [Version 10.0.22621.1265]
-(c) Microsoft Corporation. All rights reserved.
-
-C:\Users\Sachin\Desktop>g++ -o p1 p1.cpp
-
-C:\Users\Sachin\Desktop>More? 
