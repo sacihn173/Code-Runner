@@ -1,0 +1,8 @@
+sourceCode.cpp: In function 'int main()':
+sourceCode.cpp:7:2: error: 'cot' was not declared in this scope
+  cot << s + s;
+  ^~~
+sourceCode.cpp:7:2: note: suggested alternative: 'gcvt'
+  cot << s + s;
+  ^~~
+  gcvt

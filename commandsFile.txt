@@ -1,0 +1,5 @@
+g++ -o sourceCode sourceCode.cpp
+sourceCode.exe > codeOutput.txt
+kjk
+g++ sourceCode.cpp 2>errors.txt
+kjk
