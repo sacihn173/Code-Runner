@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CustomRunRequest {
 
+    private String uniqueSubmissionId;
+
     private String code;
 
     private String codeLanguage;

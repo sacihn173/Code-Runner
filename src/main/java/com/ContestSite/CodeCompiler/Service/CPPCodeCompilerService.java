@@ -15,30 +15,29 @@ public class CPPCodeCompilerService {
 
     /** To run and get output from a C++ file */
     public ResponseEntity<?> runCPPFile(CustomRunRequest request) {
-        // 1. create a file with source code
+        String sourceCodeFileName = request.getUniqueSubmissionId() + "_SourceCode.cpp";
+        String outputFileName = request.getUniqueSubmissionId() + "_OutputFile.txt";
+        String errorFileName = request.getUniqueSubmissionId() + "_ErrorFile.txt";
+        String commandsFileName = request.getUniqueSubmissionId() + "_CommandsFile.txt";
 
-        if(!createSourceCodeFile(request))
-            return ResponseEntity.ok().body("Error Creating source file");
+        if(!createSourceCodeFile(request, sourceCodeFileName))
+            return ResponseEntity.ok().body("Error Creating source file for id : " + request.getUniqueSubmissionId());
 
-        // 2. create a file with command to run compile, run and add input
+        if(!createCommandsFile(request.getTestCase(), commandsFileName, outputFileName,
+                errorFileName, sourceCodeFileName))
+            return ResponseEntity.ok().body("Error creating commands file for id : " + request.getUniqueSubmissionId());
 
-        if(!createCommandsFile(request.getTestCase()))
-            return ResponseEntity.ok().body("Error creating commands file");
+        if(!createOutputFile(outputFileName, errorFileName))
+            return ResponseEntity.ok().body("Error creating output file for id : " + request.getUniqueSubmissionId());
 
-        // 3. create a file to take output
-
-        if(!createOutputFile())
-            return ResponseEntity.ok().body("Error creating output file");
-
-        // 4. execute the file created in 2 step
-
+        // execute the source code
         ProcessBuilder processBuilder = new ProcessBuilder("cmd");
-        processBuilder.redirectInput(new File("commandsFile.txt"));
+        processBuilder.redirectInput(new File(commandsFileName));
         Process pc;
 
         try {
             pc = processBuilder.start();
-            logger.info("Compilation started");
+            logger.info("Compilation started for id : " + request.getUniqueSubmissionId());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -46,35 +45,44 @@ public class CPPCodeCompilerService {
         long startTime = System.currentTimeMillis();
         while(pc.isAlive()) {
             long curTime = System.currentTimeMillis();
+            // condition for a TLE
             if(curTime - startTime >= 4000) {
                 pc.destroyForcibly();
                 try {
                     Runtime.getRuntime().exec("taskkill /IM sourceCode.exe /F");
-                    logger.info("Task killed forcefully");
+                    logger.info("Task killed forcefully for id : " + request.getUniqueSubmissionId());
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-//                (new File("codeOutput.txt")).delete();
+                deleteCreatedFiles(sourceCodeFileName, errorFileName, outputFileName, commandsFileName);
                 return ResponseEntity.ok().body("Time Limit Exceeded");
             }
         }
 
-        return getProgramOutput();
+        ResponseEntity<?> response = getProgramOutput(request.getUniqueSubmissionId(), outputFileName, errorFileName);
+        deleteCreatedFiles(sourceCodeFileName, errorFileName, outputFileName, commandsFileName);
+        return response;
     }
 
-    public boolean createSourceCodeFile(CustomRunRequest request) {
-        File sourceCode = new File("sourceCode.cpp");
+    private void deleteCreatedFiles(String sourceCodeFileName, String errorsFileName, String outputFileName,
+                                    String commandsFileName) {
+        String exeFileName = sourceCodeFileName.substring(0, sourceCodeFileName.length()-4) + ".exe";
+        (new File(sourceCodeFileName)).delete();
+        (new File(errorsFileName)).delete();
+        (new File(outputFileName)).delete();
+        (new File(exeFileName)).delete();
+        (new File(commandsFileName)).delete();
+    }
+
+    public boolean createSourceCodeFile(CustomRunRequest request, String sourceCodeFileName) {
+
+        File sourceCode = new File(sourceCodeFileName);
         FileWriter sourceCodeWriter;
-        File previousExeFile = new File("sourceCode.exe");
         try {
-            previousExeFile.delete();
-            if(!sourceCode.createNewFile())
-                sourceCode.delete();
             sourceCode.createNewFile();
-            sourceCodeWriter = new FileWriter("sourceCode.cpp");
+            sourceCodeWriter = new FileWriter(sourceCode);
             sourceCodeWriter.write(request.getCode());
             sourceCodeWriter.close();
-            logger.info("Source code file ready");
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -84,20 +92,21 @@ public class CPPCodeCompilerService {
     }
 
     /** Program is run twice, once for errors, once for output, make two into one command */
-    private boolean createCommandsFile(String testCase) {
-        File commandsFile = new File("commandsFile.txt");
+    private boolean createCommandsFile(String testCase, String commandsFileName, String outputFileName,
+                                       String errorFileName, String sourceCodeFileName) {
+        String sourceCodeFileNameWithoutCpp = sourceCodeFileName.substring(0, sourceCodeFileName.length()-4);
+        File commandsFile = new File(commandsFileName);
         FileWriter commandsFileWriter;
         try {
             commandsFile.createNewFile();
-            commandsFileWriter = new FileWriter("commandsFile.txt");
-            commandsFileWriter.write("g++ -o sourceCode sourceCode.cpp\n");
-            commandsFileWriter.write("sourceCode.exe > codeOutput.txt\n");
+            commandsFileWriter = new FileWriter(commandsFileName);
+            commandsFileWriter.write("g++ -o " + sourceCodeFileNameWithoutCpp + " " + sourceCodeFileName +" \n");
+            commandsFileWriter.write(sourceCodeFileNameWithoutCpp + ".exe > " + outputFileName + "\n");
             commandsFileWriter.write(testCase);
             commandsFileWriter.write("\n");
-            commandsFileWriter.write("g++ sourceCode.cpp 2>errors.txt\n");
+            commandsFileWriter.write("g++ " + sourceCodeFileName + " 2> "+ errorFileName + "\n");
             commandsFileWriter.write(testCase);
             commandsFileWriter.close();
-            logger.info("Commands file ready");
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -106,17 +115,13 @@ public class CPPCodeCompilerService {
         return true;
     }
 
-    private boolean createOutputFile() {
-        File codeOutput = new File("codeOutput.txt");
-        File errorFile = new File("errors.txt");
+    private boolean createOutputFile(String outputFileName, String errorFileName) {
+        File codeOutput = new File(outputFileName);
+        File errorFile = new File(errorFileName);
         try {
-            if(!codeOutput.createNewFile())
-                codeOutput.delete();
             codeOutput.createNewFile();
-            if(!errorFile.createNewFile())
-                errorFile.delete();
             errorFile.createNewFile();
-            logger.info("Output and error file ready");
+
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -124,20 +129,20 @@ public class CPPCodeCompilerService {
         return true;
     }
 
-    private ResponseEntity<?> getProgramOutput() {
+    private ResponseEntity<?> getProgramOutput(String uniqueSubmissionId, String outputFileName, String errorsFileName) {
         StringBuilder output = new StringBuilder();
         StringBuilder errors = new StringBuilder();
         try {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader("codeOutput.txt"));
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(outputFileName));
             String iteratorString;
-            logger.info("Reading the output file");
+            logger.info("Execution success, fetching output for id : " + uniqueSubmissionId);
             while((iteratorString = bufferedReader.readLine()) != null) {
                 output.append(iteratorString);
                 output.append("\n");
             }
             bufferedReader.close();
 
-            BufferedReader errorFileReader = new BufferedReader(new FileReader("errors.txt"));
+            BufferedReader errorFileReader = new BufferedReader(new FileReader(errorsFileName));
             while ((iteratorString = errorFileReader.readLine()) != null) {
                 errors.append(iteratorString);
                 errors.append("\n");
