@@ -14,21 +14,24 @@ public class CPPCodeCompilerService {
     private Logger logger = Logger.getLogger(CPPCodeCompilerService.class.getName());
 
     /** To run and get output from a C++ file */
-    public ResponseEntity<?> runCPPFile(CustomRunRequest request) {
+    public CustomRunResponse runCPPFile(CustomRunRequest request) {
         String sourceCodeFileName = request.getUniqueSubmissionId() + "_SourceCode.cpp";
         String outputFileName = request.getUniqueSubmissionId() + "_OutputFile.txt";
         String errorFileName = request.getUniqueSubmissionId() + "_ErrorFile.txt";
         String commandsFileName = request.getUniqueSubmissionId() + "_CommandsFile.txt";
 
         if(!createSourceCodeFile(request, sourceCodeFileName))
-            return ResponseEntity.ok().body("Error Creating source file for id : " + request.getUniqueSubmissionId());
+//            return ResponseEntity.ok().body("Error Creating source file for id : " + request.getUniqueSubmissionId());
+            return null;
 
         if(!createCommandsFile(request.getTestCase(), commandsFileName, outputFileName,
                 errorFileName, sourceCodeFileName))
-            return ResponseEntity.ok().body("Error creating commands file for id : " + request.getUniqueSubmissionId());
+//            return ResponseEntity.ok().body("Error creating commands file for id : " + request.getUniqueSubmissionId());
+            return null;
 
         if(!createOutputFile(outputFileName, errorFileName))
-            return ResponseEntity.ok().body("Error creating output file for id : " + request.getUniqueSubmissionId());
+//            return ResponseEntity.ok().body("Error creating output file for id : " + request.getUniqueSubmissionId());
+            return null;
 
         // execute the source code
         ProcessBuilder processBuilder = new ProcessBuilder("cmd");
@@ -55,11 +58,12 @@ public class CPPCodeCompilerService {
                     throw new RuntimeException(e);
                 }
                 deleteCreatedFiles(sourceCodeFileName, errorFileName, outputFileName, commandsFileName);
-                return ResponseEntity.ok().body("Time Limit Exceeded");
+//                return ResponseEntity.ok().body("Time Limit Exceeded");
+                return null;
             }
         }
 
-        ResponseEntity<?> response = getProgramOutput(request.getUniqueSubmissionId(), outputFileName, errorFileName);
+        CustomRunResponse response = getProgramOutput(request.getUniqueSubmissionId(), outputFileName, errorFileName);
         deleteCreatedFiles(sourceCodeFileName, errorFileName, outputFileName, commandsFileName);
         return response;
     }
@@ -129,7 +133,7 @@ public class CPPCodeCompilerService {
         return true;
     }
 
-    private ResponseEntity<?> getProgramOutput(String uniqueSubmissionId, String outputFileName, String errorsFileName) {
+    private CustomRunResponse getProgramOutput(String uniqueSubmissionId, String outputFileName, String errorsFileName) {
         StringBuilder output = new StringBuilder();
         StringBuilder errors = new StringBuilder();
         try {
@@ -156,12 +160,16 @@ public class CPPCodeCompilerService {
         if(output.length() >= 2) output.delete(output.length()-1, output.length());
         if(errors.length() >= 2) errors.delete(errors.length()-1, errors.length());
 
-        return ResponseEntity.ok().body(
-                CustomRunResponse.builder()
-                        .output(String.valueOf(output))
-                        .errors(String.valueOf(errors))
-                        .build()
-        );
+//        return ResponseEntity.ok().body(
+//                CustomRunResponse.builder()
+//                        .output(String.valueOf(output))
+//                        .errors(String.valueOf(errors))
+//                        .build()
+//        );
+        return CustomRunResponse.builder()
+                .output(String.valueOf(output))
+                .errors(String.valueOf(errors))
+                .build();
     }
 
 }
