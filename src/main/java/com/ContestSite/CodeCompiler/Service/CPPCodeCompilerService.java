@@ -13,35 +13,32 @@ public class CPPCodeCompilerService {
 
     private Logger logger = Logger.getLogger(CPPCodeCompilerService.class.getName());
 
-    /** To run and get output from a C++ file */
     public CustomRunResponse runCPPFile(CustomRunRequest request) {
         String sourceCodeFileName = request.getUniqueSubmissionId() + "_SourceCode.cpp";
         String outputFileName = request.getUniqueSubmissionId() + "_OutputFile.txt";
         String errorFileName = request.getUniqueSubmissionId() + "_ErrorFile.txt";
-        String commandsFileName = request.getUniqueSubmissionId() + "_CommandsFile.txt";
+        String commandsFileName = request.getUniqueSubmissionId() + "_CommandsFile.sh";
 
         if(!createSourceCodeFile(request, sourceCodeFileName))
-//            return ResponseEntity.ok().body("Error Creating source file for id : " + request.getUniqueSubmissionId());
-            return null;
+            throw new RuntimeException("Error while creating source file for sub id : " + request.getUniqueSubmissionId());
 
-        if(!createCommandsFile(request.getTestCase(), commandsFileName, outputFileName,
-                errorFileName, sourceCodeFileName))
-//            return ResponseEntity.ok().body("Error creating commands file for id : " + request.getUniqueSubmissionId());
-            return null;
+        if(!createCommandsFile(request.getTestCase(), commandsFileName, outputFileName, errorFileName, sourceCodeFileName))
+            throw new RuntimeException("Error while creating commands file for sub id : " + request.getUniqueSubmissionId());
 
         if(!createOutputFile(outputFileName, errorFileName))
-//            return ResponseEntity.ok().body("Error creating output file for id : " + request.getUniqueSubmissionId());
-            return null;
+            throw new RuntimeException("Error while creating output file for sub id : " + request.getUniqueSubmissionId());
 
-        // execute the source code
-        ProcessBuilder processBuilder = new ProcessBuilder("cmd");
-        processBuilder.redirectInput(new File(commandsFileName));
         Process pc;
-
+        String commandsFilePath = System.getProperty("user.dir") + "/" + commandsFileName;
         try {
-            pc = processBuilder.start();
+            pc = Runtime.getRuntime().exec("chmod +x " + commandsFilePath);
+            pc.waitFor();
+            pc = Runtime.getRuntime().exec(commandsFilePath);
             logger.info("Compilation started for id : " + request.getUniqueSubmissionId());
         } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("error while creating process for id : " + request.getUniqueSubmissionId());
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
@@ -51,15 +48,8 @@ public class CPPCodeCompilerService {
             // condition for a TLE
             if(curTime - startTime >= 4000) {
                 pc.destroyForcibly();
-                try {
-                    Runtime.getRuntime().exec("taskkill /IM sourceCode.exe /F");
-                    logger.info("Task killed forcefully for id : " + request.getUniqueSubmissionId());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
                 deleteCreatedFiles(sourceCodeFileName, errorFileName, outputFileName, commandsFileName);
-//                return ResponseEntity.ok().body("Time Limit Exceeded");
-                return null;
+                return CustomRunResponse.builder().errors("Time Limit Exceeded").build();
             }
         }
 
@@ -70,16 +60,20 @@ public class CPPCodeCompilerService {
 
     private void deleteCreatedFiles(String sourceCodeFileName, String errorsFileName, String outputFileName,
                                     String commandsFileName) {
-        String exeFileName = sourceCodeFileName.substring(0, sourceCodeFileName.length()-4) + ".exe";
-        (new File(sourceCodeFileName)).delete();
-        (new File(errorsFileName)).delete();
-        (new File(outputFileName)).delete();
-        (new File(exeFileName)).delete();
-        (new File(commandsFileName)).delete();
+        String sourceCodeWithoutCPP = sourceCodeFileName.substring(0, sourceCodeFileName.length()-4);
+        try {
+            (new File(sourceCodeFileName)).delete();
+            (new File(errorsFileName)).delete();
+            (new File(outputFileName)).delete();
+            (new File(sourceCodeWithoutCPP)).delete(); // delete the ./a.out type file
+            (new File(commandsFileName)).delete();
+        } catch (Exception e) {
+            logger.info("error while deleting files for source file : " + sourceCodeFileName);
+            e.printStackTrace();
+        }
     }
 
     public boolean createSourceCodeFile(CustomRunRequest request, String sourceCodeFileName) {
-
         File sourceCode = new File(sourceCodeFileName);
         FileWriter sourceCodeWriter;
         try {
@@ -87,15 +81,14 @@ public class CPPCodeCompilerService {
             sourceCodeWriter = new FileWriter(sourceCode);
             sourceCodeWriter.write(request.getCode());
             sourceCodeWriter.close();
-
         } catch (IOException e) {
+            logger.info("error while creating source code file for id : " + request.getUniqueSubmissionId());
             e.printStackTrace();
             return false;
         }
         return true;
     }
 
-    /** Program is run twice, once for errors, once for output, make two into one command */
     private boolean createCommandsFile(String testCase, String commandsFileName, String outputFileName,
                                        String errorFileName, String sourceCodeFileName) {
         String sourceCodeFileNameWithoutCpp = sourceCodeFileName.substring(0, sourceCodeFileName.length()-4);
@@ -104,14 +97,11 @@ public class CPPCodeCompilerService {
         try {
             commandsFile.createNewFile();
             commandsFileWriter = new FileWriter(commandsFileName);
-            commandsFileWriter.write("g++ -o " + sourceCodeFileNameWithoutCpp + " " + sourceCodeFileName +" \n");
-            commandsFileWriter.write(sourceCodeFileNameWithoutCpp + ".exe > " + outputFileName + "\n");
-            commandsFileWriter.write(testCase);
-            commandsFileWriter.write("\n");
-            commandsFileWriter.write("g++ " + sourceCodeFileName + " 2> "+ errorFileName + "\n");
-            commandsFileWriter.write(testCase);
+            commandsFileWriter.write(
+                    "g++ -o " + sourceCodeFileNameWithoutCpp + " " + sourceCodeFileName +" 2> " + errorFileName + "\n" +
+                    "./" + sourceCodeFileNameWithoutCpp + " > " + outputFileName + "\n" +
+                    testCase);
             commandsFileWriter.close();
-
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -125,7 +115,6 @@ public class CPPCodeCompilerService {
         try {
             codeOutput.createNewFile();
             errorFile.createNewFile();
-
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -159,13 +148,6 @@ public class CPPCodeCompilerService {
         // removing '/n' from end
         if(output.length() >= 2) output.delete(output.length()-1, output.length());
         if(errors.length() >= 2) errors.delete(errors.length()-1, errors.length());
-
-//        return ResponseEntity.ok().body(
-//                CustomRunResponse.builder()
-//                        .output(String.valueOf(output))
-//                        .errors(String.valueOf(errors))
-//                        .build()
-//        );
         return CustomRunResponse.builder()
                 .output(String.valueOf(output))
                 .errors(String.valueOf(errors))
