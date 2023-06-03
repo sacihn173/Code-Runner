@@ -64,10 +64,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "Bot Username Here";
+        return "CompileItBot";
     }
 
     public String getBotToken() {
-        return "Telegram Token Here";
+        return "6214844448:AAHaEiTQQOcOZjDtmbTSNunARwI0MY6OLLQ";
     }
 }
