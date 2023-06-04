@@ -2,30 +2,36 @@ package com.ContestSite.CodeCompiler.Service;
 
 import com.ContestSite.CodeCompiler.Models.CustomRunRequest;
 import com.ContestSite.CodeCompiler.Models.CustomRunResponse;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
+import com.ContestSite.CodeCompiler.Models.Program;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.logging.Logger;
 
-@Service
-public class CPPCodeCompilerService {
+public abstract class RunProgram {
 
-    private Logger logger = Logger.getLogger(CPPCodeCompilerService.class.getName());
+    private final Logger logger = LoggerFactory.getLogger(RunProgram.class);
 
-    public CustomRunResponse runCPPFile(CustomRunRequest request) {
-        String sourceCodeFileName = request.getUniqueSubmissionId() + "_SourceCode.cpp";
+    public abstract String getCommands(Program program);
+
+    public CustomRunResponse runProgram(CustomRunRequest request, String fileExtension) {
+
+        String sourceCodeFileName = request.getUniqueSubmissionId() + "_SourceCode" + fileExtension;
         String outputFileName = request.getUniqueSubmissionId() + "_OutputFile.txt";
         String errorFileName = request.getUniqueSubmissionId() + "_ErrorFile.txt";
         String commandsFileName = request.getUniqueSubmissionId() + "_CommandsFile.sh";
+        String sourceCodeFileNameWithoutExtension = request.getUniqueSubmissionId() + "_SourceCode";
 
-        if(!createSourceCodeFile(request, sourceCodeFileName))
+        Program program = new Program(request.getUniqueSubmissionId(), sourceCodeFileName, sourceCodeFileNameWithoutExtension,
+                outputFileName, errorFileName, commandsFileName, request.getCode(), request.getTestCase());
+
+        if(!createSourceCodeFile(program))
             throw new RuntimeException("Error while creating source file for sub id : " + request.getUniqueSubmissionId());
 
-        if(!createCommandsFile(request.getTestCase(), commandsFileName, outputFileName, errorFileName, sourceCodeFileName))
+        if(!createCommandsFile(program))
             throw new RuntimeException("Error while creating commands file for sub id : " + request.getUniqueSubmissionId());
 
-        if(!createOutputFile(outputFileName, errorFileName))
+        if(!createOutputFile(program))
             throw new RuntimeException("Error while creating output file for sub id : " + request.getUniqueSubmissionId());
 
         Process pc;
@@ -48,70 +54,48 @@ public class CPPCodeCompilerService {
             // condition for a TLE
             if(curTime - startTime >= 4000) {
                 pc.destroyForcibly();
-                deleteCreatedFiles(sourceCodeFileName, errorFileName, outputFileName, commandsFileName);
+                deleteCreatedFiles(program);
                 return CustomRunResponse.builder().errors("Time Limit Exceeded").build();
             }
         }
 
-        CustomRunResponse response = getProgramOutput(request.getUniqueSubmissionId(), outputFileName, errorFileName);
-        deleteCreatedFiles(sourceCodeFileName, errorFileName, outputFileName, commandsFileName);
+        CustomRunResponse response = getProgramOutput(program);
+        deleteCreatedFiles(program);
         return response;
     }
-
-    private void deleteCreatedFiles(String sourceCodeFileName, String errorsFileName, String outputFileName,
-                                    String commandsFileName) {
-        String sourceCodeWithoutCPP = sourceCodeFileName.substring(0, sourceCodeFileName.length()-4);
+    public void deleteCreatedFiles(Program program) {
         try {
-            (new File(sourceCodeFileName)).delete();
-            (new File(errorsFileName)).delete();
-            (new File(outputFileName)).delete();
-            (new File(sourceCodeWithoutCPP)).delete(); // delete the ./a.out type file
-            (new File(commandsFileName)).delete();
+            (new File(program.getSourceCodeFileName())).delete();
+            (new File(program.getErrorFileName())).delete();
+            (new File(program.getOutputFileName())).delete();
+            (new File(program.getSourceCodeFileExtension())).delete(); // delete the ./a.out type file
+            (new File(program.getCommandsFileName())).delete();
         } catch (Exception e) {
-            logger.info("error while deleting files for source file : " + sourceCodeFileName);
+            logger.info("error while deleting files for source file : " + program.getSourceCodeFileName());
             e.printStackTrace();
         }
     }
 
-    public boolean createSourceCodeFile(CustomRunRequest request, String sourceCodeFileName) {
+    public boolean createSourceCodeFile(Program program) {
+        String sourceCodeFileName = program.getSourceCodeFileName();
         File sourceCode = new File(sourceCodeFileName);
         FileWriter sourceCodeWriter;
         try {
             sourceCode.createNewFile();
             sourceCodeWriter = new FileWriter(sourceCode);
-            sourceCodeWriter.write(request.getCode());
+            sourceCodeWriter.write(program.getSourceCode());
             sourceCodeWriter.close();
         } catch (IOException e) {
-            logger.info("error while creating source code file for id : " + request.getUniqueSubmissionId());
+            logger.info("error while creating source code file for id : " + program.getSubmissionId());
             e.printStackTrace();
             return false;
         }
         return true;
     }
 
-    private boolean createCommandsFile(String testCase, String commandsFileName, String outputFileName,
-                                       String errorFileName, String sourceCodeFileName) {
-        String sourceCodeFileNameWithoutCpp = sourceCodeFileName.substring(0, sourceCodeFileName.length()-4);
-        File commandsFile = new File(commandsFileName);
-        FileWriter commandsFileWriter;
-        try {
-            commandsFile.createNewFile();
-            commandsFileWriter = new FileWriter(commandsFileName);
-            commandsFileWriter.write(
-                    "g++ -o " + sourceCodeFileNameWithoutCpp + " " + sourceCodeFileName +" 2> " + errorFileName + "\n" +
-                    "./" + sourceCodeFileNameWithoutCpp + " > " + outputFileName + "\n" +
-                    testCase);
-            commandsFileWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
-
-    private boolean createOutputFile(String outputFileName, String errorFileName) {
-        File codeOutput = new File(outputFileName);
-        File errorFile = new File(errorFileName);
+    public boolean createOutputFile(Program program) {
+        File codeOutput = new File(program.getOutputFileName());
+        File errorFile = new File(program.getErrorFileName());
         try {
             codeOutput.createNewFile();
             errorFile.createNewFile();
@@ -122,20 +106,36 @@ public class CPPCodeCompilerService {
         return true;
     }
 
-    private CustomRunResponse getProgramOutput(String uniqueSubmissionId, String outputFileName, String errorsFileName) {
+    public boolean createCommandsFile(Program program) {
+        File commandsFile = new File(program.getCommandsFileName());
+        FileWriter commandsFileWriter;
+        try {
+            commandsFile.createNewFile();
+            commandsFileWriter = new FileWriter(program.getCommandsFileName());
+            String commands = this.getCommands(program);
+            commandsFileWriter.write(commands);
+            commandsFileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    public CustomRunResponse getProgramOutput(Program program) {
         StringBuilder output = new StringBuilder();
         StringBuilder errors = new StringBuilder();
         try {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(outputFileName));
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(program.getOutputFileName()));
             String iteratorString;
-            logger.info("Execution success, fetching output for id : " + uniqueSubmissionId);
+            logger.info("Execution success, fetching output for id : " + program.getSubmissionId());
             while((iteratorString = bufferedReader.readLine()) != null) {
                 output.append(iteratorString);
                 output.append("\n");
             }
             bufferedReader.close();
 
-            BufferedReader errorFileReader = new BufferedReader(new FileReader(errorsFileName));
+            BufferedReader errorFileReader = new BufferedReader(new FileReader(program.getErrorFileName()));
             while ((iteratorString = errorFileReader.readLine()) != null) {
                 errors.append(iteratorString);
                 errors.append("\n");

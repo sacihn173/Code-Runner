@@ -1,12 +1,6 @@
 package com.ContestSite.CodeCompiler;
 
-import com.ContestSite.CodeCompiler.Configurations.TelegramConfig;
-import com.ContestSite.CodeCompiler.Models.CustomRunRequest;
-import com.ContestSite.CodeCompiler.Service.CPPCodeCompilerService;
 import com.ContestSite.CodeCompiler.Service.TelegramBot;
-import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.telegram.telegrambots.meta.TelegramBotsApi;

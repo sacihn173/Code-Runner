@@ -1,27 +1,20 @@
 package com.ContestSite.CodeCompiler.Service;
 
-import com.ContestSite.CodeCompiler.Configurations.TelegramConfig;
-import com.ContestSite.CodeCompiler.Controllers.HomeController;
 import com.ContestSite.CodeCompiler.Models.CustomRunRequest;
 import com.ContestSite.CodeCompiler.Models.CustomRunResponse;
-import lombok.RequiredArgsConstructor;
 import org.jvnet.hk2.annotations.Service;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.util.List;
-
 @Service
 public class TelegramBot extends TelegramLongPollingBot {
 
-    private final CPPCodeCompilerService service;
+    private final RunProgramCpp service;
 
     public TelegramBot() {
-        this.service = new CPPCodeCompilerService();
+        this.service = new RunProgramCpp();
     }
 
     @Override
@@ -59,15 +52,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         request.setCodeLanguage("C++");
         // TODO : provide a better unique id for each request
         request.setUniqueSubmissionId(String.valueOf(time));
-        return service.runCPPFile(request);
+        return service.runCPPProgram(request);
     }
 
     @Override
     public String getBotUsername() {
-        return "CompileItBot";
+        return "RunCodeBot";
     }
 
     public String getBotToken() {
-        return "6214844448:AAHaEiTQQOcOZjDtmbTSNunARwI0MY6OLLQ";
+        return "6214844448:AAGP5rUtqGX9_cSLC71h-PL1gftdPDZW_A4";
     }
 }
