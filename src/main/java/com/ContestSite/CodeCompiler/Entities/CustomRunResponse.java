@@ -1,4 +1,4 @@
-package com.ContestSite.CodeCompiler.Models;
+package com.ContestSite.CodeCompiler.Entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

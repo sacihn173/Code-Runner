@@ -1,17 +1,17 @@
-package com.ContestSite.CodeCompiler.Services.Scheduler;
+package com.ContestSite.CodeCompiler.Scheduler;
 
 import com.ContestSite.CodeCompiler.Exceptions.QueueNotFoundException;
-import com.ContestSite.CodeCompiler.Models.Job;
+import com.ContestSite.CodeCompiler.Entities.Job;
 
 import java.util.*;
 
 
-public class Queues<T extends Job> {
+public class JobQueues<T extends Job> {
 
     // queueId, queue
     private Map<String, Queue<T>> queues;
 
-    Queues() {
+    JobQueues() {
         queues = new HashMap<>();
     }
 

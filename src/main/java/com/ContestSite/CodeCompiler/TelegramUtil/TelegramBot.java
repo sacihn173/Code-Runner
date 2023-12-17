@@ -1,7 +1,7 @@
 package com.ContestSite.CodeCompiler.Service;
 
-import com.ContestSite.CodeCompiler.Models.CustomRunRequest;
-import com.ContestSite.CodeCompiler.Models.CustomRunResponse;
+import com.ContestSite.CodeCompiler.Entities.JobRequest;
+import com.ContestSite.CodeCompiler.Entities.CustomRunResponse;
 import org.jvnet.hk2.annotations.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -46,7 +46,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private CustomRunResponse getProgramOutput(Message message) {
         String code = message.getText();
         long time = System.currentTimeMillis();
-        CustomRunRequest request = new CustomRunRequest();
+        JobRequest request = new JobRequest();
         request.setCode(code);
         request.setTestCase("");
         request.setCodeLanguage("C++");

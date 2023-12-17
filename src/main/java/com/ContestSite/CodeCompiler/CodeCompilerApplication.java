@@ -1,8 +1,5 @@
 package com.ContestSite.CodeCompiler;
 
-import com.ContestSite.CodeCompiler.Models.Job;
-import com.ContestSite.CodeCompiler.Services.Scheduler.UserQueuesManager;
-import com.ContestSite.CodeCompiler.Services.TelegramBot;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.telegram.telegrambots.meta.TelegramBotsApi;

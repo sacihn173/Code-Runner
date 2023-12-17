@@ -1,27 +1,42 @@
 package com.ContestSite.CodeCompiler.APIs;
 
-import com.ContestSite.CodeCompiler.Models.CustomRunRequest;
-import com.ContestSite.CodeCompiler.Models.CustomRunResponse;
-import com.ContestSite.CodeCompiler.Models.Job;
-import com.ContestSite.CodeCompiler.Services.Scheduler.UserQueuesManager;
-import org.springframework.web.bind.annotation.GetMapping;
+import com.ContestSite.CodeCompiler.Entities.JobRequest;
+import com.ContestSite.CodeCompiler.Entities.Job;
+import com.ContestSite.CodeCompiler.Entities.JobStatus;
+import com.ContestSite.CodeCompiler.Scheduler.JobContextHandler;
+import com.ContestSite.CodeCompiler.Scheduler.JobQueuesHandler;
+import lombok.Builder;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class AddJobAPI {
 
-    @GetMapping("/custom-run")
-    public CustomRunResponse addJob(@RequestBody CustomRunRequest request) {
-        String username = request.getUsername();
-        UserQueuesManager userQueuesManager = UserQueuesManager.getInstance();
-        if(!userQueuesManager.containsUserQueue(username)) {
-            userQueuesManager.insertQueue(username);
-        }
-        userQueuesManager.insertUserJob(
-                username, Job.builder().jodId(username).program(request.getProgram()).build());
+    @PostMapping("/add")
+    public Response addJob(@RequestBody JobRequest request) {
+        /*
+         * Queue Id is username
+         * JobId is username + "_" + timeInMillis
+         */
 
-        // Job is inserted into queue, pick it from there and get response here
+        String username = request.getUsername();
+        String jobId = username + "_" + System.currentTimeMillis();
+        if(!JobQueuesHandler.containsQueue(username)) {
+            JobQueuesHandler.insertQueue(username);
+        }
+        Job job = Job.builder().jodId(jobId).program(request.getProgram()).build();
+        JobQueuesHandler.insertJob(username, job);
+        job.setJobStatus(JobStatus.QUEUED);
+        JobContextHandler.addJob(job);
+        // Job is inserted into the queue, Job status can now be checked through API call
+        return Response.builder().jobId(jobId).build();
+    }
+
+    @Builder
+    public static class Response {
+        private String jobId;
     }
 
 }
+
