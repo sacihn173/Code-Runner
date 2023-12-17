@@ -1,5 +1,6 @@
 package com.ContestSite.CodeCompiler.Models;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,14 +10,9 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CustomRunRequest {
+public class CustomRunRequest extends Job {
 
-    private String uniqueSubmissionId;
-
-    private String code;
-
-    private String codeLanguage;
-
-    private String testCase;
+    @NotNull
+    private String username;
 
 }
