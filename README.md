@@ -43,8 +43,9 @@ Application Flow :
 - The Job Context Handler reflects the latests Job state at all the times.
 - Once Job is executed, response can be fetched through InspectJob API.
 <br>
-Operations Time Complexity : 
 
+Operations Time Complexity : 
+<br>
 - Job Queue Insertion : O(1)
 - Job Pickup for Execution implementing Round Robin : O(n), where n is the number of users with Job in the system, to be updated to O(logN) soon
 
