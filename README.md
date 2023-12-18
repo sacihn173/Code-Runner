@@ -9,7 +9,7 @@ Constraints maintained :
 - No two threads execute program from same user at the same time.
 - FIFO execution order is maintained at the user level.
 - Fair division of CPU time is given to each user.
-
+<br>
 
 System Architecture : 
 
