@@ -27,3 +27,25 @@ Components :
 4. JobQueues - Contains the Jobs for all the user maintaining the FIFO Order.
 
 5. UserQueues - Maintains queue for Users with Jobs in the system. Uses Round Robin method to pick up next user for which to execute job ensuring fair CPU time division among users.
+
+
+<br>
+Application Flow : 
+
+- Jobs are accepted using REST APIs.
+- Every job coming for a user is assigned a Job Id. The Job is pushed in the JobQueues which maintains all the jobs for all users in FIFO Order at user level.
+- The user is pushed into user queue if not present.
+- Using InspectJob API, the status of the job can be fetched.
+
+- The Scheduler starts once the application is started and creates a Thread Pool and a TaskQueue from where the thread picks up Jobs.
+- A seperate thread is started whose job is to pick jobs from JobQueues in a Round Robin manner using the UserQueue and JobQueues.
+- Once Job is picked by the thread, it is assigned to the Executor and it is executed.
+- The Job Context Handler reflects the latests Job state at all the times.
+- Once Job is executed, response can be fetched through InspectJob API.
+<br>
+Operations Time Complexity : 
+
+- Job Queue Insertion : O(1)
+- Job Pickup for Execution implementing Round Robin : O(n), where n is the number of users with Job in the system, to be updated to O(logN) soon
+
+
