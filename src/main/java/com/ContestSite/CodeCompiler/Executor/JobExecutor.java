@@ -12,9 +12,10 @@ public abstract class JobExecutor {
 
     private final Logger logger = LoggerFactory.getLogger(JobExecutor.class);
 
-    public void execute(Job job, String fileExtension) {
+    public void execute(Job job) {
         job.setJobStatus(JobStatus.RUNNING);
         JobContextHandler.updateJob(job.getJodId(), job);
+        String fileExtension = job.getProgram().getProgramLanguage().getFileExtension();
         populateJobData(job, fileExtension);
 
         // TODO : Job Failure Handling Mechanism
@@ -161,6 +162,10 @@ public abstract class JobExecutor {
         if(errors.length() >= 2) errors.delete(errors.length()-1, errors.length());
         job.getProgram().setOutput(String.valueOf(output));
         job.getProgram().setErrors(String.valueOf(errors));
+    }
+
+    public static Class<? extends JobExecutor> getJobExecutor(Job job) {
+        return job.getProgram().getProgramLanguage().getExecutorClass();
     }
 
     public abstract String getCommands(Job job);

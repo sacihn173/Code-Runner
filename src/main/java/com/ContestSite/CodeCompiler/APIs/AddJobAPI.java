@@ -5,6 +5,8 @@ import com.ContestSite.CodeCompiler.Entities.Job;
 import com.ContestSite.CodeCompiler.Entities.JobStatus;
 import com.ContestSite.CodeCompiler.Scheduler.JobContextHandler;
 import com.ContestSite.CodeCompiler.Scheduler.JobQueuesHandler;
+import com.ContestSite.CodeCompiler.Scheduler.UserQueue;
+import com.ContestSite.CodeCompiler.Scheduler.UserQueueHandler;
 import lombok.Builder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,9 +28,12 @@ public class AddJobAPI {
             JobQueuesHandler.insertQueue(username);
         }
         Job job = Job.builder().jodId(jobId).program(request.getProgram()).build();
-        JobQueuesHandler.insertJob(username, job);
+
+        UserQueueHandler.push(username);
+        JobQueuesHandler.insertJob(username, jobId);
         job.setJobStatus(JobStatus.QUEUED);
         JobContextHandler.addJob(job);
+
         // Job is inserted into the queue, Job status can now be checked through API call
         return Response.builder().jobId(jobId).build();
     }

@@ -1,10 +1,9 @@
 package com.ContestSite.CodeCompiler.Scheduler;
 
-import com.ContestSite.CodeCompiler.Entities.Job;
 
 public class JobQueuesHandler {
 
-    private static JobQueues<Job> jobQueues;
+    private static JobQueues<String, String> jobQueues;
 
     static {
         jobQueues = new JobQueues<>();
@@ -18,8 +17,12 @@ public class JobQueuesHandler {
         jobQueues.insertQueue(id);
     }
 
-    public static void insertJob(String queueId, Job job) {
-        jobQueues.insertJob(queueId, job);
+    public static void insertJob(String queueId, String jobId) {
+        jobQueues.insertJob(queueId, jobId);
+    }
+
+    public static String pickUserOldestJob(String username) {
+        return jobQueues.pickOldestJob(username);
     }
 
 }

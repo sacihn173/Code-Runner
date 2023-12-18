@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Stores every Job present in the System and always reflected the latest status of the Job
+ * Stores every Job present in the System and always reflects the latest status of the Job
  */
 
 public class JobContextHandler {

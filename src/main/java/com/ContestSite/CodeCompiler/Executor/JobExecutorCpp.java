@@ -7,10 +7,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class JobExecutorCpp extends JobExecutor {
 
-    private static final String FILE_EXTENSION = ProgramLanguage.CPP.getFileExtension();
-
     public void execute(Job job) {
-        this.execute(job, FILE_EXTENSION);
+        super.execute(job);
     }
 
     @Override

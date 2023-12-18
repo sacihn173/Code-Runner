@@ -11,10 +11,10 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 @Service
 public class TelegramBot extends TelegramLongPollingBot {
 
-    private final RunProgramCpp service;
+//    private final RunProgramCpp service;
 
     public TelegramBot() {
-        this.service = new RunProgramCpp();
+//        this.service = new RunProgramCpp();
     }
 
     @Override
@@ -44,15 +44,16 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private CustomRunResponse getProgramOutput(Message message) {
-        String code = message.getText();
-        long time = System.currentTimeMillis();
-        JobRequest request = new JobRequest();
-        request.setCode(code);
-        request.setTestCase("");
-        request.setCodeLanguage("C++");
-        // TODO : provide a better unique id for each request
-        request.setUniqueSubmissionId(String.valueOf(time));
-        return service.runCPPProgram(request);
+//        String code = message.getText();
+//        long time = System.currentTimeMillis();
+//        JobRequest request = new JobRequest();
+//        request.setCode(code);
+//        request.setTestCase("");
+//        request.setCodeLanguage("C++");
+//        // TODO : provide a better unique id for each request
+//        request.setUniqueSubmissionId(String.valueOf(time));
+//        return service.runCPPProgram(request);
+        return null;
     }
 
     @Override

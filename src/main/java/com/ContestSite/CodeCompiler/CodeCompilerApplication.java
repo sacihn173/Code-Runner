@@ -1,5 +1,6 @@
 package com.ContestSite.CodeCompiler;
 
+import com.ContestSite.CodeCompiler.Scheduler.JobScheduler;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -12,8 +13,11 @@ public class CodeCompilerApplication {
 	public static void main(String[] args) throws TelegramApiException {
 		SpringApplication.run(CodeCompilerApplication.class, args);
 
-		TelegramBotsApi api = new TelegramBotsApi(DefaultBotSession.class);
-		api.registerBot(new TelegramBot());
+		// Start picking Jobs from Queues and executes them
+		JobScheduler.initialize();
+
+//		TelegramBotsApi api = new TelegramBotsApi(DefaultBotSession.class);
+//		api.registerBot(new TelegramBot());
 
 	}
 
