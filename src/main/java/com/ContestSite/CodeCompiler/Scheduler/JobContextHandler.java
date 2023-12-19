@@ -20,7 +20,7 @@ public class JobContextHandler {
     }
 
     public static void addJob(Job job) {
-        context.put(job.getJodId(), job);
+        context.put(job.getJobId(), job);
     }
 
     public static Job getJobContext(String jobId) {

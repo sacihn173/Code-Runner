@@ -14,6 +14,7 @@ public class JobScheduler {
      * Starts threads which picks up Jobs from Queues
      */
     public static void initialize() {
+        System.out.println("Schedular Started");
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(8, 8, 1,
                 TimeUnit.MINUTES, taskQueue);
         executorService.prestartAllCoreThreads();
@@ -21,7 +22,12 @@ public class JobScheduler {
         new Thread(() -> {
             while(true) {
                 if(taskQueue.size() <= 20) {
-                    taskQueue.add(Task.builder().jobId(pickJob()).build());
+                    String jobId = pickJob();
+                    if(jobId != null) {
+                        Task task = Task.builder().jobId(jobId).build();
+                        System.out.println("Adding Job to Queue : " + task.jobId);
+                        taskQueue.add(task);
+                    }
                 }
             }
         }).start();
@@ -30,12 +36,14 @@ public class JobScheduler {
     /**
      * Pops a User from UserQueue using UserQueueHandler
      * Picks a Job for this User from JobQueues using JobQueuesHandler
-     * Pushes the User into the UserQueue using UserQueueHandler
+     * Pushes the User into the UserQueue if the User's Job Queue is not empty using UserQueueHandler
      */
     public synchronized static String pickJob() {
         String username = UserQueueHandler.pop();
         String jobId = JobQueuesHandler.pickUserOldestJob(username);
-        UserQueueHandler.push(username);
+        if(!JobQueuesHandler.isUserQueueEmpty(username)) {
+            UserQueueHandler.push(username);
+        }
         return jobId;
     }
 

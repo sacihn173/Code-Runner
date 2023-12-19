@@ -1,6 +1,5 @@
-package com.ContestSite.CodeCompiler.Service;
+package com.ContestSite.CodeCompiler.TelegramUtil;
 
-import com.ContestSite.CodeCompiler.Entities.JobRequest;
 import com.ContestSite.CodeCompiler.Entities.CustomRunResponse;
 import org.jvnet.hk2.annotations.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;

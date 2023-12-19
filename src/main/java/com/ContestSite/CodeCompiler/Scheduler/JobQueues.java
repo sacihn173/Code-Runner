@@ -39,4 +39,11 @@ public class JobQueues <K, T> {
         return null;
     }
 
+    public synchronized boolean isQueueEmpty(K queueId) {
+        if(queues.containsKey(queueId)) {
+            return queues.get(queueId).isEmpty();
+        }
+        return true;
+    }
+
 }

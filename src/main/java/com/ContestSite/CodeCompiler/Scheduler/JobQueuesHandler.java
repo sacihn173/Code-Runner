@@ -25,4 +25,8 @@ public class JobQueuesHandler {
         return jobQueues.pickOldestJob(username);
     }
 
+    public static boolean isUserQueueEmpty(String username) {
+        return jobQueues.isQueueEmpty(username);
+    }
+
 }

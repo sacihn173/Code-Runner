@@ -13,21 +13,22 @@ public abstract class JobExecutor {
     private final Logger logger = LoggerFactory.getLogger(JobExecutor.class);
 
     public void execute(Job job) {
+        logger.info("Starting execution for Job Id : " + job.getJobId());
         job.setJobStatus(JobStatus.RUNNING);
-        JobContextHandler.updateJob(job.getJodId(), job);
+        JobContextHandler.updateJob(job.getJobId(), job);
         String fileExtension = job.getProgram().getProgramLanguage().getFileExtension();
         populateJobData(job, fileExtension);
 
         // TODO : Job Failure Handling Mechanism
 
         if(!createSourceCodeFile(job))
-            throw new RuntimeException("Error while creating source file for sub id : " + job.getJodId());
+            throw new RuntimeException("Error while creating source file for sub id : " + job.getJobId());
 
         if(!createCommandsFile(job))
-            throw new RuntimeException("Error while creating commands file for sub id : " + job.getJodId());
+            throw new RuntimeException("Error while creating commands file for sub id : " + job.getJobId());
 
         if(!createOutputFile(job))
-            throw new RuntimeException("Error while creating output file for sub id : " + job.getJodId());
+            throw new RuntimeException("Error while creating output file for sub id : " + job.getJobId());
 
         Process pc;
         String commandsFilePath = System.getProperty("user.dir") + "/" + job.getProgram().getCommandsFileName();
@@ -35,10 +36,10 @@ public abstract class JobExecutor {
             pc = Runtime.getRuntime().exec("chmod +x " + commandsFilePath);
             pc.waitFor();
             pc = Runtime.getRuntime().exec(commandsFilePath);
-            logger.info("Compilation started for id : " + job.getJodId());
+            logger.info("Compilation started for id : " + job.getJobId());
         } catch (IOException e) {
             e.printStackTrace();
-            throw new RuntimeException("error while creating process for id : " + job.getJodId());
+            throw new RuntimeException("error while creating process for id : " + job.getJobId());
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -51,7 +52,9 @@ public abstract class JobExecutor {
                 pc.destroyForcibly();
                 deleteCreatedFiles(job);
                 job.getProgram().setTimeLimitExceeded(true);
-                logger.info("Job exceeded time limit : " + job.getJodId());
+                job.setJobStatus(JobStatus.FAILED);
+                JobContextHandler.updateJob(job.getJobId(), job);
+                logger.info("Job exceeded time limit : " + job.getJobId());
                 return;
             }
         }
@@ -59,15 +62,15 @@ public abstract class JobExecutor {
         populateJobOutput(job);
         deleteCreatedFiles(job);
         job.setJobStatus(JobStatus.COMPLETED);
-        JobContextHandler.updateJob(job.getJodId(), job);
+        JobContextHandler.updateJob(job.getJobId(), job);
         // TODO : Decide when to push the response
     }
 
     private void populateJobData(Job job, String fileExtension) {
-        String sourceCodeFileName = job.getJodId() + "_SourceCode" + fileExtension;
-        String outputFileName = job.getJodId() + "_OutputFile.txt";
-        String errorFileName = job.getJodId() + "_ErrorFile.txt";
-        String commandsFileName = job.getJodId() + "_CommandsFile.sh";
+        String sourceCodeFileName = job.getJobId() + "_SourceCode" + fileExtension;
+        String outputFileName = job.getJobId() + "_OutputFile.txt";
+        String errorFileName = job.getJobId() + "_ErrorFile.txt";
+        String commandsFileName = job.getJobId() + "_CommandsFile.sh";
 
         job.getProgram().setSourceCodeFileName(sourceCodeFileName);
         job.getProgram().setOutputFileName(outputFileName);
@@ -80,7 +83,7 @@ public abstract class JobExecutor {
             (new File(job.getProgram().getSourceCodeFileName())).delete();
             (new File(job.getProgram().getErrorFileName())).delete();
             (new File(job.getProgram().getOutputFileName())).delete();
-            (new File(job.getProgram().getSourceCodeFileExtension())).delete(); // delete the ./a.out type file
+            // add deletion the ./a.out type file
             (new File(job.getProgram().getCommandsFileName())).delete();
         } catch (Exception e) {
             logger.info("error while deleting files for source file : " + job.getProgram().getSourceCodeFileName());
@@ -98,7 +101,7 @@ public abstract class JobExecutor {
             sourceCodeWriter.write(job.getProgram().getSourceCode());
             sourceCodeWriter.close();
         } catch (IOException e) {
-            logger.info("error while creating source code file for id : " + job.getJodId());
+            logger.info("error while creating source code file for id : " + job.getJobId());
             e.printStackTrace();
             return false;
         }
@@ -140,7 +143,7 @@ public abstract class JobExecutor {
         try {
             BufferedReader bufferedReader = new BufferedReader(new FileReader(job.getProgram().getOutputFileName()));
             String iteratorString;
-            logger.info("Execution success, fetching output for id : " + job.getJodId());
+            logger.info("Execution success, fetching output for id : " + job.getJobId());
             while((iteratorString = bufferedReader.readLine()) != null) {
                 output.append(iteratorString);
                 output.append("\n");

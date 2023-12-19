@@ -7,12 +7,13 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @Getter
 @SuperBuilder
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Job {
 
-    protected String jodId;
+    protected String jobId;
 
     protected Program program;
 
