@@ -47,6 +47,6 @@ Application Flow :
 Operations Time Complexity : 
 <br>
 - Job Queue Insertion : O(1)
-- Job Pickup for Execution implementing Round Robin : O(n), where n is the number of users with Job in the system, to be updated to O(logN) soon
+- Job Pickup for Execution implementing Round Robin : O(1)
 
 
