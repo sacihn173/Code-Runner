@@ -18,11 +18,11 @@ System Architecture :
 
 Components : 
 
-1. Scheduler - Starts a Thread Pool on application start. Maintains a TaskQueue in which Jobs are pushed and picked by the threads to execute.
+1. JobScheduler - Starts a Thread Pool on application start. Maintains a TaskQueue in which Jobs are pushed and picked by the threads to execute.
 
-2. Executor - Recieves the Jobs and executes them by creating a Process of the given program and updates the Job Context with the outputs and errors generated.
+2. JobExecutor - Recieves the Jobs and executes them by creating a Process of the given program and updates the Job Context with the outputs and errors generated.
 
-3. Job Context Handler - Reflects the latest state of any Job and maintains the complete Job Data.
+3. JobContextHandler - Reflects the latest state of any Job and maintains the complete Job Data.
 
 4. JobQueues - Contains the Jobs for all the user maintaining the FIFO Order.
 
